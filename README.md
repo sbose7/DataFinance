@@ -1,12 +1,12 @@
-# deal-analyzer
+# DataFinance (deal-analyzer)
 
 Underwrite real estate deals from the command line: buy-and-hold rentals, fix-and-flips, and cash-out / DSCR refinances (the BRRRR loop). Pure Python, no dependencies.
 
 ## Install
 
 ```bash
-git clone https://github.com/sbose7/deal-analyzer.git
-cd deal-analyzer
+git clone https://github.com/sbose7/DataFinance.git
+cd DataFinance
 pip install -e ".[dev]"
 ```
 
