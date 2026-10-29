@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #E6EAE8;
+  --sheet: #F3F5F4;
+  --ink: #1D2A33;
+  --ink-soft: #4A5964;
+  --rule: #5E7C80;
+  --rule-faint: #C3CDCC;
+  --good: #256B4C;
+  --thin: #8A6A1F;
+  --bad: #A23B2A;
+  --good-wash: 37, 107, 76;
+  --bad-wash: 162, 59, 42;
+  --focus: #2F6F95;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151C21;
+    --sheet: #1C252B;
+    --ink: #E3E8E6;
+    --ink-soft: #A4B0B4;
+    --rule: #7C9A9E;
+    --rule-faint: #33424A;
+    --good: #5FB88C;
+    --thin: #D4AE5A;
+    --bad: #E37A66;
+    --good-wash: 95, 184, 140;
+    --bad-wash: 227, 122, 102;
+    --focus: #7DB8DC;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Archivo", system-ui, sans-serif;
+  font-variation-settings: "wdth" 100;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.num, td, dd, input[type=number] { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 64px; }
+
+header.top {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 12px 24px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
+}
+.brand {
+  font-variation-settings: "wdth" 75; font-weight: 700; font-size: 22px; letter-spacing: 0.01em; margin: 0;
+}
+.brand small { font-weight: 400; color: var(--ink-soft); font-variation-settings: "wdth" 100; font-size: 14px; margin-left: 8px; }
+
+.kinds { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+.kinds button {
+  font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink);
+  padding: 7px 14px; cursor: pointer; border-right: 1px solid var(--rule-faint);
+}
+.kinds button:last-child { border-right: 0; }
+.kinds button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+main.desk {
+  display: grid; grid-template-columns: minmax(280px, 380px) 1fr; grid-template-rows: auto 1fr;
+  grid-template-areas: "form verdict" "form rest"; column-gap: 40px; margin-top: 28px;
+}
+main.desk > form.inputs { grid-area: form; }
+main.desk > .verdict { grid-area: verdict; }
+main.desk > .rest { grid-area: rest; min-width: 0; }
+@media (max-width: 860px) {
+  main.desk { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "verdict" "form" "rest"; }
+  main.desk > form.inputs { margin-top: 24px; }
+  .kinds { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
+  .kinds button { white-space: nowrap; }
+}
+
+/* Inputs */
+form.inputs fieldset { border: 0; padding: 0; margin: 0 0 22px; }
+form.inputs legend {
+  font-variation-settings: "wdth" 75; font-weight: 600; font-size: 15px; padding: 0 0 6px;
+  color: var(--ink-soft); border-bottom: 1px solid var(--rule-faint); width: 100%;
+}
+.field { display: grid; grid-template-columns: 1fr 132px; align-items: center; gap: 10px; padding: 5px 0; }
+.field label { font-size: 14px; color: var(--ink); }
+.field .box { display: flex; align-items: center; border-bottom: 1px solid var(--rule-faint); }
+.field .box:focus-within { border-bottom-color: var(--ink); }
+.field input[type=number] {
+  width: 100%; font: inherit; font-size: 15px; text-align: right; color: var(--ink);
+  background: transparent; border: 0; padding: 4px 2px; -moz-appearance: textfield;
+}
+.field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.field .unit { font-size: 13px; color: var(--ink-soft); padding-left: 4px; min-width: 14px; }
+.field.check .box { border: 0; justify-content: flex-end; }
+.field input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--ink); }
+.reset {
+  font: inherit; font-size: 14px; background: none; border: 0; color: var(--ink-soft);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0;
+}
+
+/* Verdict: the one loud thing */
+.verdict { padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
+.verdict h2 {
+  margin: 0; font-variation-settings: "wdth" 62; font-weight: 800;
+  font-size: clamp(40px, 6.4vw, 84px); line-height: 0.98; letter-spacing: -0.01em;
+  color: var(--tone, var(--ink)); transition: color .25s ease; text-wrap: balance;
+}
+.verdict p { margin: 12px 0 0; font-size: 17px; color: var(--ink-soft); max-width: 62ch; }
+.verdict[data-tone=good] { --tone: var(--good); }
+.verdict[data-tone=thin] { --tone: var(--thin); }
+.verdict[data-tone=bad]  { --tone: var(--bad); }
+.verdict .err { color: var(--bad); }
+
+/* Ledger of metrics */
+.ledger { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); column-gap: 40px; margin: 18px 0 0; }
+.ledger div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px dotted var(--rule-faint); }
+.ledger dt { font-size: 14px; color: var(--ink-soft); }
+.ledger dd { margin: 0; font-weight: 600; font-size: 15px; }
+
+section.panel { margin-top: 36px; }
+section.panel > h3 {
+  margin: 0 0 4px; font-variation-settings: "wdth" 75; font-weight: 700; font-size: 22px;
+}
+section.panel > p.hint { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; max-width: 70ch; }
+
+/* Chart + yearly table */
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+.chart .legend span::before { content: ""; display: inline-block; width: 18px; height: 0; vertical-align: middle; margin-right: 6px; border-top: 2px solid; }
+.chart .lg-value::before { border-color: var(--ink) !important; }
+.chart .lg-loan::before { border-color: var(--rule) !important; border-top-style: dashed !important; }
+.chart .lg-equity::before { border-top-width: 8px !important; border-color: rgba(var(--good-wash), .35) !important; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 6px 10px; text-align: right; white-space: nowrap; }
+th { font-weight: 600; color: var(--ink-soft); border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { text-align: left; }
+tbody tr { border-bottom: 1px dotted var(--rule-faint); }
+
+/* Stress test */
+.stress-controls { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; align-items: center; max-width: 720px; }
+.stress-controls label { font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 560px) {
+  .stress-controls { grid-template-columns: 1fr; gap: 6px; }
+  .stress-controls label { margin-top: 8px; }
+}
+select, .range input {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet);
+  border: 1px solid var(--rule-faint); border-radius: 3px; padding: 6px 8px; width: 100%;
+}
+.range { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; font-size: 13px; color: var(--ink-soft); }
+button.primary {
+  font: inherit; font-size: 15px; font-weight: 600; background: var(--ink); color: var(--paper);
+  border: 0; border-radius: 3px; padding: 9px 16px; cursor: pointer;
+}
+button.quiet {
+  font: inherit; font-size: 14px; background: transparent; color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 7px 12px; cursor: pointer;
+}
+.heat { margin-top: 16px; }
+.heat td { font-weight: 600; text-align: center; }
+.heat th[scope=row] { text-align: left; }
+.heat td.current { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+.pins-empty { color: var(--ink-soft); font-size: 14px; }
+.pin-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.pin-actions input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--rule-faint); border-radius: 3px; background: var(--sheet); color: var(--ink); min-width: 0; flex: 1 1 180px; }
+.x { font: inherit; font-size: 12px; font-weight: 400; background: none; border: 0; padding: 0 0 0 6px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; }
+
+footer.note { margin-top: 48px; padding-top: 14px; border-top: 1px solid var(--rule-faint); font-size: 13px; color: var(--ink-soft); max-width: 80ch; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">Deal Analyzer <small>Does this deal work?</small></h1>
+    <nav class="kinds" id="kinds" aria-label="Analysis type"></nav>
+  </header>
+
+  <main class="desk">
+    <form class="inputs" id="inputs" autocomplete="off" novalidate>
+      <div id="fields"></div>
+      <button type="button" class="reset" id="reset">Reset to sample deal</button>
+    </form>
+
+    <section class="verdict" id="verdict" aria-live="polite">
+      <h2 id="verdict-head">Loading…</h2>
+      <p id="verdict-sub"></p>
+    </section>
+
+    <div class="rest">
+      <dl class="ledger" id="ledger"></dl>
+
+      <section class="panel" id="projection-panel" hidden>
+        <h3>Over the hold</h3>
+        <p class="hint">Property value against what you still owe. The gap is your equity.</p>
+        <div class="chart" id="chart"></div>
+        <div class="scroll" style="margin-top:18px"><table id="years"></table></div>
+      </section>
+
+      <section class="panel">
+        <h3>Stress test</h3>
+        <p class="hint">Move two inputs at once and see where the deal stops working. The outlined cell is your current deal.</p>
+        <div class="stress-controls">
+          <label for="sx">Across</label>
+          <select id="sx"></select>
+          <div class="range"><input id="sx-from" type="number" step="any" aria-label="Across, from"><span>to</span><input id="sx-to" type="number" step="any" aria-label="Across, to"></div>
+          <label for="sy">Down</label>
+          <select id="sy"></select>
+          <div class="range"><input id="sy-from" type="number" step="any" aria-label="Down, from"><span>to</span><input id="sy-to" type="number" step="any" aria-label="Down, to"></div>
+          <label for="sm">Show</label>
+          <select id="sm"></select>
+          <div><button type="button" class="primary" id="run-stress">Run stress test</button></div>
+        </div>
+        <div class="heat scroll" id="heat"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Pinned deals</h3>
+        <p class="hint">Pin versions of a deal to compare them side by side. Pins stay in this browser.</p>
+        <div class="pin-actions">
+          <input id="pin-name" placeholder="Name this version, e.g. 20% down" aria-label="Pin name">
+          <button type="button" class="quiet" id="pin">Pin this deal</button>
+        </div>
+        <div class="scroll" id="pins"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="note">
+    Verdicts use rules of thumb: rentals want DSCR of 1.2 or more and positive cash flow, flips want at least 10% of ARV as profit,
+    holds want an IRR of 8% or more. Percent inputs are entered as percents. Same engine as the <code>deal-analyzer</code> command line.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const PCT_INPUT = /(_pct$|rate$|^rate$|growth|appreciation|ltv|points|loan_to_cost)/;
+  const PCT_HINTS = ["rate", "roi", "cash_on_cash", "irr", "margin", "_pct", "growth", "appreciation", "ltv"];
+  const RATIO_HINTS = ["dscr", "multiplier", "multiple"];
+  const COUNT = new Set(["year", "years", "month", "holding_months", "loan_years", "refi_years"]);
+  const SPECIAL = { noi: "NOI", dscr: "DSCR", roi: "ROI", irr: "IRR", arv: "ARV", ltv: "LTV", capex: "CapEx", hoa: "HOA", pct: "", acq: "acquisition" };
+  const DEFAULT_STRESS = {
+    rental: ["interest_rate", "monthly_rent", "monthly_cash_flow"],
+    flip: ["arv", "rehab_costs", "net_profit"],
+    refi: ["rate", "appraised_value", "cash_out"],
+    brrrr: ["arv", "rehab_costs", "monthly_cash_flow"],
+    project: ["projection.appreciation", "projection.rent_growth", "irr"],
+  };
+  const PIN_KEY = "deal-analyzer:pins";
+
+  let schema = {}, samples = {}, kind = "rental", inputs = {}, result = null, timer = null, seq = 0;
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- formatting ----------
+  const money = (v) => (v < 0 ? "-" : "") + "$" + Math.abs(v).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const pct = (v) => (v * 100).toFixed(v !== 0 && Math.abs(v) < 0.1 ? 2 : 1) + "%";
+  const leaf = (k) => k.split(".").pop();
+  function fmt(key, v) {
+    key = leaf(key);
+    if (v === null || v === undefined) return key.includes("dscr") || key.includes("irr") ? "n/a" : "∞";
+    if (typeof v === "boolean") return v ? "yes" : "no";
+    if (typeof v === "string") return v;
+    if (COUNT.has(key)) return String(Math.round(v));
+    if (RATIO_HINTS.some((h) => key.includes(h))) return v.toFixed(2);
+    if (PCT_HINTS.some((h) => key.includes(h)) || PCT_INPUT.test(key)) return pct(v);
+    return money(v);
+  }
+  const LABELS = { starting_value: "Starting value (0 = cost)", min_dscr: "Lender min DSCR", existing_loan_balance: "Current loan balance",
+                   monthly_expenses_ex_debt: "Taxes, insurance, HOA / mo", loan_to_cost: "Loan to cost", finance_rehab: "Loan covers rehab",
+                   seventy_percent_rule_max: "70% rule max offer", passes_seventy_percent_rule: "Passes 70% rule", one_percent_rule: "Passes 1% rule" };
+  function label(key) {
+    if (LABELS[leaf(key)]) return LABELS[leaf(key)];
+    const s = leaf(key).split("_").map((w) => (w in SPECIAL ? SPECIAL[w] : w)).filter(Boolean).join(" ");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  const isPctInput = (name) => PCT_INPUT.test(name) && !COUNT.has(name);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- inputs ----------
+  function getPath(obj, path) { return path.split(".").reduce((o, p) => (o == null ? undefined : o[p]), obj); }
+  function setPath(obj, path, val) {
+    const parts = path.split("."); let o = obj;
+    for (const p of parts.slice(0, -1)) o = o[p] = o[p] || {};
+    o[parts.at(-1)] = val;
+  }
+  function inputPaths() {
+    const out = [];
+    for (const g of schema[kind].groups) for (const f of g.fields) {
+      if (f.type === "bool") continue;
+      out.push({ path: g.key ? `${g.key}.${f.name}` : f.name, name: f.name });
+    }
+    return out;
+  }
+  function loadSample() {
+    inputs = {};
+    for (const g of schema[kind].groups) for (const f of g.fields) {
+      const path = g.key ? `${g.key}.${f.name}` : f.name;
+      const sample = getPath(samples[kind], path);
+      setPath(inputs, path, sample !== undefined ? sample : (f.default ?? 0));
+    }
+  }
+  function renderFields() {
+    const host = $("fields"); host.innerHTML = "";
+    for (const g of schema[kind].groups) {
+      const fs = document.createElement("fieldset");
+      fs.innerHTML = `<legend>${esc(g.name === "Deal" || g.name === "Refinance" ? "The deal" : "Assumptions")}</legend>`;
+      for (const f of g.fields) {
+        const path = g.key ? `${g.key}.${f.name}` : f.name;
+        const id = "f-" + path.replace(".", "-");
+        const v = getPath(inputs, path);
+        const row = document.createElement("div");
+        if (f.type === "bool") {
+          row.className = "field check";
+          row.innerHTML = `<label for="${id}">${esc(label(f.name))}</label><div class="box"><input type="checkbox" id="${id}" ${v ? "checked" : ""}></div>`;
+          row.querySelector("input").addEventListener("change", (e) => { setPath(inputs, path, e.target.checked); schedule(); });
+        } else {
+          const p = isPctInput(f.name);
+          const shown = p ? +(v * 100).toFixed(4) : v;
+          const unit = p ? "%" : f.name.includes("dscr") ? "×" : (COUNT.has(f.name) ? (f.name.includes("month") ? "mo" : "yr") : "$");
+          row.className = "field";
+          row.innerHTML = `<label for="${id}">${esc(label(f.name))}</label><div class="box">${unit === "$" ? '<span class="unit">$</span>' : ""}<input type="number" inputmode="decimal" step="any" id="${id}" value="${shown}">${unit !== "$" ? `<span class="unit">${unit}</span>` : ""}</div>`;
+          row.querySelector("input").addEventListener("input", (e) => {
+            const raw = e.target.value === "" ? 0 : Number(e.target.value);
+            if (Number.isNaN(raw)) return;
+            setPath(inputs, path, p ? raw / 100 : (f.type === "int" ? Math.round(raw) : raw));
+            schedule();
+          });
+        }
+        fs.appendChild(row);
+      }
+      host.appendChild(fs);
+    }
+  }
+
+  // ---------- running ----------
+  function schedule() { clearTimeout(timer); timer = setTimeout(analyze, 200); }
+  async function post(url, body) {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+  async function analyze() {
+    const mine = ++seq;
+    try {
+      const r = await post(`/api/run/${kind}`, inputs);
+      if (mine !== seq) return;
+      result = r; renderResult();
+    } catch (e) {
+      if (mine !== seq) return;
+      $("verdict").dataset.tone = "bad";
+      $("verdict-head").textContent = "Can't run these numbers.";
+      $("verdict-sub").innerHTML = `<span class="err">${esc(e.message)}</span>`;
+    }
+  }
+
+  // ---------- verdict ----------
+  function verdict(r) {
+    switch (kind) {
+      case "rental": {
+        const cf = r.monthly_cash_flow, d = r.dscr;
+        if (cf < 0) return ["bad", `Loses ${money(-cf)} a month.`, `It needs ${money(r.breakeven_rent)} in rent to break even.`];
+        if ((d !== null && d < 1.2) || r.cash_on_cash < 0.04)
+          return ["thin", `Cash flows ${money(cf)} a month. Thin.`, `DSCR ${fmt("dscr", d)} and ${pct(r.cash_on_cash)} cash-on-cash. One vacancy or repair wipes out the year.`];
+        return ["good", `Cash flows ${money(cf)} a month.`, `${pct(r.cash_on_cash)} cash-on-cash on ${money(r.cash_invested)} in, DSCR ${fmt("dscr", d)}.`];
+      }
+      case "flip": {
+        const p = r.net_profit, m = r.profit_margin_on_arv;
+        if (p < 0) return ["bad", `Loses ${money(-p)}.`, `The 70% rule caps the offer at ${money(r.seventy_percent_rule_max)}.`];
+        if (m < 0.1) return ["thin", `Clears ${money(p)}. Thin.`, `That's ${pct(m)} of ARV, so a rehab overrun eats it. The 70% rule caps the offer at ${money(r.seventy_percent_rule_max)}.`];
+        return ["good", `Clears ${money(p)}.`, `${pct(r.roi_on_cash)} on ${money(r.cash_required)} of cash over the hold.`];
+      }
+      case "refi": {
+        if (!r.meets_min_dscr) return ["bad", `Fails the DSCR test.`, `Rent covers PITIA ${fmt("dscr", r.dscr)} times. Lenders want more.`];
+        if (r.cash_out < 0) return ["bad", `Needs ${money(-r.cash_out)} to close.`, `The new loan is ${r.binding_constraint}-limited at ${money(r.new_loan_amount)}.`];
+        return ["good", `Pulls out ${money(r.cash_out)}.`, `${r.binding_constraint}-limited loan of ${money(r.new_loan_amount)}, leaving ${money(r.cash_left_in_deal)} in the deal.`];
+      }
+      case "brrrr": {
+        const cf = r.monthly_cash_flow, left = r.cash_left_in_deal;
+        if (cf < 0) return ["bad", `Loses ${money(-cf)} a month after the refi.`, `The refi pulls out ${money(r.cash_out)} and leaves ${money(Math.max(left, 0))} in the deal.`];
+        if (left <= 0) return ["good", `Every dollar back, and it cash flows ${money(cf)} a month.`, `The refi returns ${money(-left)} more than you put in.`];
+        const tone = r.cash_on_cash !== null && r.cash_on_cash >= 0.08 ? "good" : "thin";
+        return [tone, `Leaves ${money(left)} in, cash flows ${money(cf)} a month.`, `${fmt("cash_on_cash", r.cash_on_cash)} cash-on-cash on what's left in, ${money(r.equity_after_refi)} of equity.`];
+      }
+      case "project": {
+        const n = r.years.length;
+        if (r.irr === null) return ["bad", `No return over ${n} years.`, `The cash flows never pay back what you put in.`];
+        const sub = `${r.equity_multiple.toFixed(2)}× your ${money(r.cash_invested)}, ${money(r.total_profit)} profit after the sale.`;
+        if (r.irr < 0.08) return ["thin", `${pct(r.irr)} a year over ${n} years. Thin.`, sub];
+        return ["good", `${pct(r.irr)} a year over ${n} years.`, sub];
+      }
+    }
+  }
+
+  function renderResult() {
+    const [tone, head, sub] = verdict(result);
+    $("verdict").dataset.tone = tone;
+    $("verdict-head").textContent = head;
+    $("verdict-sub").textContent = sub;
+
+    const skip = new Set(["years", "cash_flows", "expense_breakdown"]);
+    $("ledger").innerHTML = Object.entries(result)
+      .filter(([k, v]) => !skip.has(k) && (v === null || typeof v !== "object"))
+      .map(([k, v]) => `<div><dt>${esc(label(k))}</dt><dd>${esc(fmt(k, v))}</dd></div>`).join("");
+
+    const proj = kind === "project";
+    $("projection-panel").hidden = !proj;
+    if (proj) { renderChart(result.years); renderYears(result.years); }
+    renderStressControls();
+    renderPins();
+  }
+
+  // ---------- projection ----------
+  function renderChart(years) {
+    const W = 640, H = 260, L = 56, R = 12, T = 12, B = 28;
+    const maxV = Math.max(...years.map((y) => y.property_value), 1);
+    const nice = Math.pow(10, Math.floor(Math.log10(maxV)));
+    const top = Math.ceil(maxV / nice) * nice;
+    const x = (i) => L + (years.length === 1 ? 0 : (i / (years.length - 1)) * (W - L - R));
+    const y = (v) => T + (1 - v / top) * (H - T - B);
+    const pts = (key) => years.map((r, i) => `${x(i).toFixed(1)},${y(r[key]).toFixed(1)}`).join(" ");
+    const area = `M${pts("property_value").split(" ").join(" L")} L${years.map((r, i) => `${x(i).toFixed(1)},${y(r.loan_balance).toFixed(1)}`).reverse().join(" L")} Z`;
+    let grid = "";
+    for (let k = 0; k <= 4; k++) {
+      const v = (top / 4) * k, yy = y(v);
+      grid += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--rule-faint)" stroke-width="1"/>`;
+      grid += `<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--ink-soft)">${v >= 1e6 ? "$" + (v / 1e6).toFixed(1) + "M" : "$" + Math.round(v / 1000) + "k"}</text>`;
+    }
+    const step = Math.ceil(years.length / 10);
+    const xl = years.map((r, i) => (i % step === 0 || i === years.length - 1)
+      ? `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Yr ${r.year}</text>` : "").join("");
+    $("chart").innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Property value, loan balance, and equity by year">
+        ${grid}${xl}
+        <path d="${area}" fill="rgba(var(--good-wash), .18)"/>
+        <polyline points="${pts("loan_balance")}" fill="none" stroke="var(--rule)" stroke-width="2" stroke-dasharray="5 4"/>
+        <polyline points="${pts("property_value")}" fill="none" stroke="var(--ink)" stroke-width="2.25"/>
+      </svg>
+      <div class="legend"><span class="lg-value">Property value</span><span class="lg-loan">Loan balance</span><span class="lg-equity">Equity</span></div>`;
+  }
+  function renderYears(years) {
+    const cols = ["year", "gross_income", "noi", "debt_service", "cash_flow", "loan_balance", "property_value", "equity", "cash_on_cash"];
+    const heads = { year: "Year", gross_income: "Income", noi: "NOI", debt_service: "Debt", cash_flow: "Cash flow",
+                    loan_balance: "Owed", property_value: "Value", equity: "Equity", cash_on_cash: "Cash-on-cash" };
+    $("years").innerHTML = `<thead><tr>${cols.map((c) => `<th scope="col">${heads[c]}</th>`).join("")}</tr></thead>
+      <tbody>${years.map((r) => `<tr>${cols.map((c) => `<td>${esc(fmt(c, r[c]))}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  }
+
+  // ---------- stress test ----------
+  function numericMetrics() {
+    return Object.entries(result).filter(([, v]) => typeof v === "number" || v === null).map(([k]) => k);
+  }
+  function suggestRange(path) {
+    const v = getPath(inputs, path) ?? 0, name = leaf(path);
+    if (isPctInput(name)) {
+      const d = Math.abs(v) < 0.2 ? 0.005 : 0.05;
+      return [Math.max(0, v - 2 * d), v + 2 * d];
+    }
+    if (name.includes("dscr")) return [Math.max(0, +(v - 0.2).toFixed(2)), +(v + 0.2).toFixed(2)];
+    if (v === 0) return [0, 1000];
+    return [Math.round(v * 0.8), Math.round(v * 1.2)];
+  }
+  function setRange(axis) {
+    const path = $(axis).value, [lo, hi] = suggestRange(path), p = isPctInput(leaf(path));
+    $(axis + "-from").value = p ? +(lo * 100).toFixed(3) : lo;
+    $(axis + "-to").value = p ? +(hi * 100).toFixed(3) : hi;
+  }
+  let stressKind = null;
+  function renderStressControls() {
+    if (stressKind === kind) {
+      // keep the user's metric choice, refresh options only if missing
+      return;
+    }
+    stressKind = kind;
+    const paths = inputPaths(), [dx, dy, dm] = DEFAULT_STRESS[kind];
+    const opts = (sel) => paths.map((p) => `<option value="${p.path}" ${p.path === sel ? "selected" : ""}>${esc(label(p.name))}</option>`).join("");
+    $("sx").innerHTML = opts(dx); $("sy").innerHTML = opts(dy);
+    $("sm").innerHTML = numericMetrics().map((m) => `<option value="${m}" ${m === dm ? "selected" : ""}>${esc(label(m))}</option>`).join("");
+    setRange("sx"); setRange("sy");
+    $("heat").innerHTML = "";
+  }
+  function steps(lo, hi, n = 5) {
+    if (hi < lo) [lo, hi] = [hi, lo];
+    return Array.from({ length: n }, (_, i) => +(lo + ((hi - lo) * i) / (n - 1)).toFixed(6));
+  }
+  function readAxis(axis) {
+    const path = $(axis).value, p = isPctInput(leaf(path));
+    const lo = Number($(axis + "-from").value), hi = Number($(axis + "-to").value);
+    const div = p ? 100 : 1;
+    return { path, values: steps(lo / div, hi / div) };
+  }
+  async function runStress() {
+    const X = readAxis("sx"), Y = readAxis("sy"), metric = $("sm").value;
+    if (X.path === Y.path) { $("heat").innerHTML = `<p class="pins-empty">Pick two different inputs to move.</p>`; return; }
+    $("heat").innerHTML = `<p class="pins-empty">Running…</p>`;
+    try {
+      const g = await post("/api/sensitivity", { kind, inputs, metric, x_field: X.path, x_values: X.values, y_field: Y.path, y_values: Y.values });
+      renderHeat(g);
+    } catch (e) {
+      $("heat").innerHTML = `<p class="pins-empty err">${esc(e.message)}</p>`;
+    }
+  }
+  function renderHeat(g) {
+    const flat = g.values.flat().filter((v) => typeof v === "number");
+    const min = Math.min(...flat), max = Math.max(...flat), absMax = Math.max(Math.abs(min), Math.abs(max)) || 1;
+    const diverging = min < 0 && max > 0 || (min < 0 && max <= 0);
+    const cx = getPath(inputs, g.x_field), cy = getPath(inputs, g.y_field);
+    const near = (vals, c) => vals.reduce((best, v, i) => (Math.abs(v - c) < Math.abs(vals[best] - c) ? i : best), 0);
+    const ix = near(g.x_values, cx), iy = near(g.y_values, cy);
+    const exact = Math.abs(g.x_values[ix] - cx) < 1e-9 && Math.abs(g.y_values[iy] - cy) < 1e-9;
+    const shade = (v) => {
+      if (typeof v !== "number") return "";
+      if (diverging) {
+        const a = (Math.abs(v) / absMax) * 0.55 + 0.08;
+        return `background: rgba(var(${v >= 0 ? "--good-wash" : "--bad-wash"}), ${a.toFixed(2)})`;
+      }
+      const a = ((v - min) / ((max - min) || 1)) * 0.55 + 0.08;
+      return `background: rgba(var(--good-wash), ${a.toFixed(2)})`;
+    };
+    $("heat").innerHTML = `<table>
+      <thead><tr><th scope="col">${esc(label(g.y_field))} ↓ &nbsp; ${esc(label(g.x_field))} →</th>${g.x_values.map((v) => `<th scope="col">${esc(fmt(g.x_field, v))}</th>`).join("")}</tr></thead>
+      <tbody>${g.values.map((row, r) => `<tr><th scope="row">${esc(fmt(g.y_field, g.y_values[r]))}</th>${row.map((v, c) =>
+        `<td class="${exact && r === iy && c === ix ? "current" : ""}" style="${shade(v)}">${esc(fmt(g.metric, v))}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>`;
+  }
+
+  // ---------- pins ----------
+  function readPins() { try { return JSON.parse(localStorage.getItem(PIN_KEY) || "[]"); } catch { return []; } }
+  function writePins(p) { try { localStorage.setItem(PIN_KEY, JSON.stringify(p)); } catch { /* storage unavailable */ } }
+  let memPins = null;
+  const pins = () => memPins ?? (memPins = readPins());
+  function pin() {
+    if (!result) return;
+    const name = $("pin-name").value.trim() || `${schema[kind].title} ${pins().filter((p) => p.kind === kind).length + 1}`;
+    const scalars = Object.fromEntries(Object.entries(result).filter(([, v]) => v === null || typeof v !== "object"));
+    pins().push({ kind, name, inputs: JSON.parse(JSON.stringify(inputs)), result: scalars });
+    writePins(pins()); $("pin-name").value = ""; renderPins();
+  }
+  function renderPins() {
+    const mine = pins().map((p, i) => ({ ...p, i })).filter((p) => p.kind === kind);
+    if (!mine.length) { $("pins").innerHTML = `<p class="pins-empty">No pinned ${esc(schema[kind].title.toLowerCase())} deals yet. Pin one, change an input, then pin again.</p>`; return; }
+    const metrics = Object.keys(mine[0].result);
+    $("pins").innerHTML = `<table>
+      <thead><tr><th scope="col">Metric</th>${mine.map((p) => `<th scope="col">${esc(p.name)}<br><button type="button" class="x" data-load="${p.i}">Load</button> <button type="button" class="x" data-del="${p.i}">Remove</button></th>`).join("")}</tr></thead>
+      <tbody>${metrics.map((m) => `<tr><td>${esc(label(m))}</td>${mine.map((p) => `<td>${esc(fmt(m, p.result[m]))}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>`;
+  }
+  $("pins").addEventListener("click", (e) => {
+    const del = e.target.dataset.del, load = e.target.dataset.load;
+    if (del !== undefined) { pins().splice(+del, 1); writePins(pins()); renderPins(); }
+    if (load !== undefined) { inputs = JSON.parse(JSON.stringify(pins()[+load].inputs)); renderFields(); analyze(); }
+  });
+
+  // ---------- kinds ----------
+  function renderKinds() {
+    $("kinds").innerHTML = Object.entries(schema).map(([k, v]) =>
+      `<button type="button" data-kind="${k}" aria-pressed="${k === kind}">${esc(v.title)}</button>`).join("");
+  }
+  $("kinds").addEventListener("click", (e) => {
+    const k = e.target.dataset.kind;
+    if (!k || k === kind) return;
+    kind = k; result = null; renderKinds(); loadSample(); renderFields(); analyze();
+  });
+  $("reset").addEventListener("click", () => { loadSample(); renderFields(); analyze(); });
+  $("sx").addEventListener("change", () => setRange("sx"));
+  $("sy").addEventListener("change", () => setRange("sy"));
+  $("run-stress").addEventListener("click", runStress);
+  $("pin").addEventListener("click", pin);
+
+  (async () => {
+    try {
+      [schema, samples] = await Promise.all([fetch("/api/schema").then((r) => r.json()), fetch("/api/samples").then((r) => r.json())]);
+    } catch {
+      $("verdict-head").textContent = "Can't reach the analyzer.";
+      $("verdict-sub").textContent = "Start it with deal-analyzer serve, then reload this page.";
+      return;
+    }
+    renderKinds(); loadSample(); renderFields(); analyze();
+  })();
+})();
+</script>
+</body>
+</html>

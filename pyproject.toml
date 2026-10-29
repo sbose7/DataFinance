@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deal-analyzer"
-version = "0.1.0"
-description = "Underwrite rental, flip, and BRRRR real estate deals from the command line."
+version = "0.2.0"
+description = "Underwrite rental, flip, BRRRR, and multi-year hold real estate deals from the command line or a local web app."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -20,6 +20,9 @@ deal-analyzer = "deal_analyzer.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+deal_analyzer = ["web/*.html"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
