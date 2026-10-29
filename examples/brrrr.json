@@ -1,0 +1,17 @@
+{
+  "purchase_price": 210000,
+  "rehab_costs": 55000,
+  "arv": 360000,
+  "monthly_rent": 2700,
+  "loan_to_cost": 0.85,
+  "acq_rate": 0.11,
+  "acq_points": 0.02,
+  "holding_months": 5,
+  "monthly_holding": 700,
+  "max_ltv": 0.75,
+  "refi_rate": 0.0725,
+  "refi_years": 30,
+  "min_dscr": 1.0,
+  "property_tax": 3800,
+  "insurance": 1400
+}
