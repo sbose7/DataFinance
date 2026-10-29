@@ -1,0 +1,11 @@
+{
+  "purchase_price": 280000,
+  "arv": 450000,
+  "rehab_costs": 60000,
+  "holding_months": 6,
+  "loan_to_cost": 0.85,
+  "loan_rate": 0.11,
+  "loan_points": 0.02,
+  "monthly_holding": 900,
+  "contingency_pct": 0.10
+}

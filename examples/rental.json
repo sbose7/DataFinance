@@ -1,0 +1,15 @@
+{
+  "purchase_price": 320000,
+  "monthly_rent": 2800,
+  "down_payment_pct": 0.25,
+  "interest_rate": 0.0725,
+  "loan_years": 30,
+  "closing_costs": 8000,
+  "rehab_costs": 5000,
+  "property_tax": 4200,
+  "insurance": 1500,
+  "vacancy_pct": 0.05,
+  "maintenance_pct": 0.05,
+  "capex_pct": 0.05,
+  "management_pct": 0.08
+}

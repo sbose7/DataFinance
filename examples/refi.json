@@ -1,0 +1,12 @@
+{
+  "appraised_value": 450000,
+  "existing_loan_balance": 289000,
+  "total_cash_in_deal": 85000,
+  "monthly_rent": 3200,
+  "monthly_expenses_ex_debt": 600,
+  "max_ltv": 0.75,
+  "rate": 0.075,
+  "years": 30,
+  "closing_cost_pct": 0.03,
+  "min_dscr": 1.0
+}
